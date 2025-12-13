@@ -271,7 +271,7 @@ function updateBook(bookId){
 
  /**新增借閱紀錄 */
  // 修改後的寫法 (正確)
-function addBookLendRecord(book) {  
+function addBookLendRecord(book) { // 加上 book 參數
     //TODO：請完成新增借閱紀錄相關功能
     var record = {
         "BookId": book.BookId,
@@ -372,6 +372,16 @@ function showBookForUpdate(e) {
     $("#book_detail_area").data("kendoWindow").title("修改書籍");
     $("#btn-save").css("display","");
 
+    // [Fix] 確保欄位解除鎖定 (Re-enable inputs)
+    $(".k-textbox, .k-dropdown, .k-datepicker").removeClass("k-state-disabled");
+    $("input, textarea").prop("disabled", false);
+    
+    // Kendo 元件啟用
+    $("#book_class_d").data("kendoDropDownList").enable(true);
+    $("#book_status_d").data("kendoDropDownList").enable(true);
+    $("#book_keeper_d").data("kendoDropDownList").enable(true);
+    $("#book_bought_date_d").data("kendoDatePicker").enable(true);
+
     var grid = getBooGrid();
     var bookId = grid.dataItem(e.target.closest("tr")).BookId;
 
@@ -414,7 +424,8 @@ function showBookForDetail(e, bookId) {
  * @param {*} bookId 
  */
 function bindBook(bookId){
-    var book = bookDataFromLocalStorage.find(m => m.BookId == bookId);
+    var book = bookDataFromLocalStorage.find(function(m){ return m.BookId == bookId; });
+    
     $("#book_id_d").val(bookId);
     $("#book_name_d").val(book.BookName);
     $("#book_author_d").val(book.BookAuthor);
