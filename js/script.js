@@ -65,6 +65,7 @@ $(function () {
         $("#book_status_d").data("kendoDropDownList").select(0);
         $("#book_keeper_d").data("kendoDropDownList").select(0);
         $("#book_image").attr("src", "image/optional.jpg");
+        onChange();
         
         // 設定日期為今天
         $("#book_bought_date_d").data("kendoDatePicker").value(new Date());
@@ -199,13 +200,15 @@ function loadBookData() {
 }
 
 function onChange() {
-    //TODO : 請完成遺漏的邏輯
     var selectedValue = $("#book_class_d").data("kendoDropDownList").value();
     
+    // 加入這行來偵錯 (按 F12 在 Console 分頁可以看到)
+    console.log("切換圖片，代碼為：" + selectedValue);
+
     if(selectedValue === ""){
-        $("#book_image").attr("src", "image/optional.jpg");
+        $("#book_image_d").attr("src", "image/optional.jpg");
     }else{
-       $("#book_image").attr("src", "image/" + selectedValue + ".jpg");
+    $("#book_image_d").attr("src", "image/" + selectedValue + ".jpg");
     }
 }
 
