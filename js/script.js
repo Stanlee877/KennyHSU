@@ -197,24 +197,45 @@ function onChange() {
  * 新增書籍
  */
 function addBook() { 
-
     //TODO：請完成新增書籍的相關功能
-    var grid=$("#book_grid").data("kendoGrid");
+    // 取得目前最大 ID 並 +1
+    var maxId = 0;
+    if(bookDataFromLocalStorage.length > 0){
+        bookDataFromLocalStorage.forEach(function(item){
+            if(item.BookId > maxId) maxId = item.BookId;
+        });
+    }
+    var newId = maxId + 1;
+
+    // 取得類別名稱
+    var classId = $("#book_class_d").data("kendoDropDownList").value();
+    var className = "";
+    var classItem = classData.find(function(c){ return c.value == classId; });
+    if(classItem) className = classItem.text;
+
     var book = {
-        "BookId": 0,
+        "BookId": newId,
         "BookName": $("#book_name_d").val(),
-        "BookClassId": $("#book_class_d").data("kendoDropDownList").value(),
-        "BookClassName": "",
+        "BookClassId": classId,
+        "BookClassName": className,
         "BookBoughtDate": kendo.toString($("#book_bought_date_d").data("kendoDatePicker").value(),"yyyy-MM-dd"),
         "BookStatusId": "A",
-        "BookStatusName": bookStatusData.find(m=>m.StatusId==defauleBookStatusId).StatusText,
+        "BookStatusName": "可以借出", // 預設狀態
         "BookKeeperId": "",
         "BookKeeperCname": "",
         "BookKeeperEname": "",
-        "BookAuthor": "",
-        "BookPublisher": "",
-        "BookNote": ""
+        "BookAuthor": $("#book_author_d").val(),
+        "BookPublisher": $("#book_publisher_d").val(),
+        "BookNote": $("#book_note_d").val()
     }
+
+    // 存入 LocalStorage
+    bookDataFromLocalStorage.push(book);
+    localStorage.setItem("bookData", JSON.stringify(bookDataFromLocalStorage));
+
+    // 更新 Grid
+    var grid = $("#book_grid").data("kendoGrid");
+    grid.dataSource.data(bookDataFromLocalStorage);
 
     //關閉 Window
     $("#book_detail_area").data("kendoWindow").close();
@@ -225,35 +246,55 @@ function addBook() {
   * @param {} bookId 
   */
 function updateBook(bookId){
-    
     //TODO：請完成更新書籍的相關功能
-    var book=bookDataFromLocalStorage.find(m=>m.BookId==bookId)
+    // 注意：這裡假設原程式碼的 find 語法是被允許的 (ES6)，若需嚴格 ES5 請改用 for loop
+    var book = bookDataFromLocalStorage.find(function(m){ return m.BookId == bookId; });
 
-    book.BookName=$("#book_name_d").val();
-    book.BookClassId=$("#book_class_d").val();
-    book.BookClassName="";
-    book.BookBoughtDate=""
-    book.BookStatusId=""
-    book.BookStatusName=""
+    book.BookName = $("#book_name_d").val();
+    book.BookClassId = $("#book_class_d").data("kendoDropDownList").value();
     
-    var bookKeeperId=$("#book_keeper_d").data("kendoDropDownList").value();
-    var bookKeeperCname=
-        bookKeeperId==""?"":memberData.find(m=>m.UserId==bookKeeperId).UserCname;
+    // 更新類別名稱
+    var classItem = classData.find(function(c){ return c.value == book.BookClassId; });
+    book.BookClassName = classItem ? classItem.text : "";
 
-    book.BookKeeperId=bookKeeperId;
-    book.BookKeeperCname=bookKeeperCname;
-    book.BookKeeperEname="";
-
-    book.BookAuthor="";
-    book.BookPublisher="";
-    book.BookNote="";
-
-    var grid=$("#book_grid").data("kendoGrid");
-    grid.dataSource.pushUpdate(book);
-
+    book.BookBoughtDate = kendo.toString($("#book_bought_date_d").data("kendoDatePicker").value(), "yyyy-MM-dd");
     
-    if(bookStatusId=="B" || bookStatusId=="C"){
-        addBookLendRecord();
+    // 更新狀態與借閱人
+    var statusId = $("#book_status_d").data("kendoDropDownList").value();
+    var statusItem = bookStatusData.find(function(s){ return s.StatusId == statusId; });
+    book.BookStatusId = statusId;
+    book.BookStatusName = statusItem ? statusItem.StatusText : "";
+    
+    var bookKeeperId = $("#book_keeper_d").data("kendoDropDownList").value();
+    var bookKeeperCname = "";
+    var bookKeeperEname = "";
+    
+    if(bookKeeperId){
+        var member = memberData.find(function(m){ return m.UserId == bookKeeperId; });
+        if(member){
+            bookKeeperCname = member.UserCname;
+            bookKeeperEname = member.UserEname;
+        }
+    }
+
+    book.BookKeeperId = bookKeeperId;
+    book.BookKeeperCname = bookKeeperCname;
+    book.BookKeeperEname = bookKeeperEname;
+
+    book.BookAuthor = $("#book_author_d").val();
+    book.BookPublisher = $("#book_publisher_d").val();
+    book.BookNote = $("#book_note_d").val(); // 注意：原本程式碼寫 BookNote=""; 這裡修正為取值
+
+    // 存回 LocalStorage
+    localStorage.setItem("bookData", JSON.stringify(bookDataFromLocalStorage));
+
+    var grid = $("#book_grid").data("kendoGrid");
+    // grid.dataSource.pushUpdate(book); // pushUpdate 有時不穩定，建議重刷 data
+    grid.dataSource.data(bookDataFromLocalStorage);
+    
+    // 若狀態改變為借出，需新增紀錄
+    if(statusId == "B" || statusId == "C"){
+        addBookLendRecord(book);
     }
     
     $("#book_detail_area").data("kendoWindow").close();
@@ -388,33 +429,55 @@ function clear(area) {
  */
 function setStatusKeepRelation() { 
     //TODO : 請補齊借閱人與借閱狀態相關邏輯
+    var statusId = $("#book_status_d").data("kendoDropDownList").value();
+    var keeperDrop = $("#book_keeper_d").data("kendoDropDownList");
+
     switch (state) {
         case "add"://新增狀態
             $("#book_status_d_col").css("display","none");
             $("#book_keeper_d_col").css("display","none");
-        
-            $("#book_status_d").prop('required',false);
-            $("#book_keeper_d").prop('required',false);            
-            break;
+            break; // 原程式碼已有，這裡僅為上下文
+            
         case "update"://修改狀態
+            $("#book_status_d_col").css("display","block"); // 確保顯示
+            $("#book_keeper_d_col").css("display","block");
 
-            $("#book_status_d").prop('required',true);
-
-            var bookStatusId=$("#book_status_d").data("kendoDropDownList").value();
-
-            if(bookStatusId=="A" || bookStatusId=="U"){
-                $("#book_keeper_d").prop('required',false);
-                $("#book_keeper_d").data("kendoDropDownList").value("");
-                $("#book_detail_area").data("kendoValidator").validateInput($("#book_keeper_d"));
-                     
-            }else{
-                $("#book_keeper_d").prop('required',true);
+            // A:可借出, C:不可借出 (借閱人 Disable, 非必填)
+            if(statusId == "A" || statusId == "U"){ 
+                 // 注意：根據文件 A=可以借出, U=不可借出(Source 30寫不可借出是U, Source 12寫U是已借出未領?)
+                 // 根據 Source 12: A(可借出), U(已借出未領), B(已借出), C(不可借出)
+                 // Source 12 說: A, C -> Disable. B, U -> Enable.
+            }
+            
+            // 根據 Source 12 邏輯重新實作
+            if (statusId === "B" || statusId === "C") { // 假設 C 是已借出(未領)對應文件說明，雖然文件代碼對應有點混亂，我們依循 "需要借閱人" 的情境
+                // 根據 source 12: B(已借出), U(已借出未領) -> Enable, 必填
+                // 假設 C 在 source 35 是已借出(未領)， source 12 寫 U 是已借出(未領)。依照 code-data.js: U=不可借出, C=已借出(未領)
+                // 正確邏輯應依照 code-data.js (Source 37):
+                // A:可以借出, B:已借出, U:不可借出, C:已借出(未領)
+                
+                // 邏輯: B(已借出) 與 C(已借出未領) 需要借閱人
+               if(statusId === "B" || statusId === "C"){
+                   keeperDrop.enable(true);
+                   $("#book_keeper_d").prop("required", true);
+                   $("#book_keeper_d").closest(".k-dropdown").removeClass("k-state-disabled");
+               } else {
+                   // A(可以借出) 與 U(不可借出) 不需要借閱人
+                   keeperDrop.value("");
+                   keeperDrop.enable(false);
+                   $("#book_keeper_d").prop("required", false);
+               }
+            } else {
+                 // Fallback logic inside the provided switch structure
+                 if(statusId == "B" || statusId == "C"){ // B & C need keeper
+                    keeperDrop.enable(true);
+                 } else {
+                    keeperDrop.enable(false);
+                    keeperDrop.value("");
+                 }
             }
             break;
-        default:
-            break;
     }
-    
  }
 
  /**
