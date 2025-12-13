@@ -42,9 +42,34 @@ $(function () {
 
     $("#btn_add_book").click(function (e) {
         e.preventDefault();
-        state=stateOption.add;
+        state = stateOption.add;
 
-        setStatusKeepRelation(state);
+        // [Fix 1] 強制解鎖：移除禁用樣式與屬性
+        $(".k-textbox, .k-dropdown, .k-datepicker").removeClass("k-state-disabled");
+        $("input, textarea").prop("disabled", false);
+
+        // [Fix 2] 強制啟用 Kendo 元件
+        $("#book_class_d").data("kendoDropDownList").enable(true);
+        $("#book_status_d").data("kendoDropDownList").enable(true);
+        $("#book_keeper_d").data("kendoDropDownList").enable(true);
+        $("#book_bought_date_d").data("kendoDatePicker").enable(true);
+
+        // [Fix 3] 清空欄位 (如果不加這段，打開會看到上一本書的資料)
+        $("#book_name_d").val("");
+        $("#book_author_d").val("");
+        $("#book_publisher_d").val("");
+        $("#book_note_d").val("");
+        
+        // 重置下拉選單與圖片
+        $("#book_class_d").data("kendoDropDownList").select(0);
+        $("#book_status_d").data("kendoDropDownList").select(0);
+        $("#book_keeper_d").data("kendoDropDownList").select(0);
+        $("#book_image").attr("src", "image/optional.jpg");
+        
+        // 設定日期為今天
+        $("#book_bought_date_d").data("kendoDatePicker").value(new Date());
+
+        setStatusKeepRelation();
 
         $("#btn-save").css("display","");        
         $("#book_detail_area").data("kendoWindow").title("新增書籍");
