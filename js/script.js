@@ -477,57 +477,32 @@ function clear(area) {
  * 設定借閱狀態與借閱人關聯
  */
 function setStatusKeepRelation() { 
-    //TODO : 請補齊借閱人與借閱狀態相關邏輯
     var statusId = $("#book_status_d").data("kendoDropDownList").value();
     var keeperDrop = $("#book_keeper_d").data("kendoDropDownList");
+    var keeperContainer = $("#book_keeper_d").closest(".k-dropdown");
 
-    switch (state) {
-        case "add"://新增狀態
-            $("#book_status_d_col").css("display","none");
-            $("#book_keeper_d_col").css("display","none");
-            break; 
-            
-        case "update"://修改狀態
-            $("#book_status_d_col").css("display","block"); // 確保顯示
-            $("#book_keeper_d_col").css("display","block");
+    // 依照 state 判斷顯示與否
+    if (state === "add") {
+        $("#book_status_d_col").hide();
+        $("#book_keeper_d_col").hide();
+    } else {
+        $("#book_status_d_col").show();
+        $("#book_keeper_d_col").show();
 
-            // A:可借出, C:不可借出 (借閱人 Disable, 非必填)
-            if(statusId == "A" || statusId == "U"){ 
-                 // 注意：根據文件 A=可以借出, U=不可借出(Source 30寫不可借出是U, Source 12寫U是已借出未領?)
-                 // 根據 Source 12: A(可借出), U(已借出未領), B(已借出), C(不可借出)
-                 // Source 12 說: A, C -> Disable. B, U -> Enable.
-            }
-            
-            // 根據 Source 12 邏輯重新實作
-            if (statusId === "B" || statusId === "C") { // 假設 C 是已借出(未領)對應文件說明，雖然文件代碼對應有點混亂，我們依循 "需要借閱人" 的情境
-                // 根據 source 12: B(已借出), U(已借出未領) -> Enable, 必填
-                // 假設 C 在 source 35 是已借出(未領)， source 12 寫 U 是已借出(未領)。依照 code-data.js: U=不可借出, C=已借出(未領)
-                // 正確邏輯應依照 code-data.js (Source 37):
-                // A:可以借出, B:已借出, U:不可借出, C:已借出(未領)
-                
-                // 邏輯: B(已借出) 與 C(已借出未領) 需要借閱人
-               if(statusId === "B" || statusId === "C"){
-                   keeperDrop.enable(true);
-                   $("#book_keeper_d").prop("required", true);
-                   $("#book_keeper_d").closest(".k-dropdown").removeClass("k-state-disabled");
-               } else {
-                   // A(可以借出) 與 U(不可借出) 不需要借閱人
-                   keeperDrop.value("");
-                   keeperDrop.enable(false);
-                   $("#book_keeper_d").prop("required", false);
-               }
-            } else {
-                 // Fallback logic inside the provided switch structure
-                 if(statusId == "B" || statusId == "C"){ // B & C need keeper
-                    keeperDrop.enable(true);
-                 } else {
-                    keeperDrop.enable(false);
-                    keeperDrop.value("");
-                 }
-            }
-            break;
+        // 邏輯判斷：B(已借出) 或 C(已借出未領) 需要借閱人 [cite: 12, 37]
+        if (statusId == "B" || statusId == "C") {
+            keeperDrop.enable(true);
+            $("#book_keeper_d").attr("required", true); 
+            keeperContainer.removeClass("k-state-disabled");
+        } else {
+            // A(可以借出) 或 U(不可借出) 不需要借閱人
+            keeperDrop.value(""); 
+            keeperDrop.enable(false);
+            $("#book_keeper_d").removeAttr("required");
+            keeperContainer.addClass("k-state-disabled");
+        }
     }
- }
+}
 
  /**
   * 生成畫面所需的 Kendo 控制項
