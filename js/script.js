@@ -372,6 +372,14 @@ function showBookLendRecord(e) {
 function clear(area) {
     //TODO : 請補齊未完成的功能
     $("#book_name_q").val("");
+    // 清除下拉選單
+    $("#book_class_q").data("kendoDropDownList").select(0);
+    $("#book_keeper_q").data("kendoDropDownList").select(0);
+    $("#book_status_q").data("kendoDropDownList").select(0);
+    
+    // 重新整理 Grid (顯示全部資料)
+    var grid = getBooGrid();
+    grid.dataSource.filter({});
 
 }
 
