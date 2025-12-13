@@ -374,11 +374,27 @@ function showBookForUpdate(e) {
  * @param {} e 
  * @param {*} bookId 
  */
-function showBookForDetail(e,bookId) {
-    e.preventDefault();
+function showBookForDetail(e, bookId) {
     //TODO : 請補齊未完成的功能
+    state = ""; // 清空狀態，避免觸發驗證或修改邏輯
     $("#book_detail_area").data("kendoWindow").title("書籍明細");
-
+    
+    bindBook(bookId);
+    
+    // 設定所有欄位 Disable
+    $(".k-textbox, .k-dropdown, .k-datepicker").addClass("k-state-disabled");
+    $("input, textarea").prop("disabled", true);
+    
+    // Kendo 元件 Disable
+    $("#book_class_d").data("kendoDropDownList").enable(false);
+    $("#book_status_d").data("kendoDropDownList").enable(false);
+    $("#book_keeper_d").data("kendoDropDownList").enable(false);
+    $("#book_bought_date_d").data("kendoDatePicker").enable(false);
+    
+    // 隱藏存檔按鈕
+    $("#btn-save").css("display", "none");
+    
+    $("#book_detail_area").data("kendoWindow").open();
 }
 
 /**
