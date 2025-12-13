@@ -270,7 +270,8 @@ function updateBook(bookId){
 }
 
  /**新增借閱紀錄 */
- function addBookLendRecord() {  
+ // 修改後的寫法 (正確)
+function addBookLendRecord(book) {  
     //TODO：請完成新增借閱紀錄相關功能
     var record = {
         "BookId": book.BookId,
