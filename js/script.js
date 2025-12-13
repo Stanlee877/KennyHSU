@@ -322,21 +322,41 @@ function updateBook(bookId){
   */
 function queryBook(){
     
-    var grid=getBooGrid();
+    var grid = getBooGrid();
+    var filtersCondition = [];
 
-    var bookClassId=$("#book_class_q").data("kendoDropDownList").value() ?? "";
-
-
-    var filtersCondition=[];
-    if(bookClassId!=""){
-        filtersCondition.push({ field: "BookClassId", operator: "contains", value: bookClassId });
+    // 1. 書名：模糊查詢 (contains) 
+    var bookName = $("#book_name_q").val();
+    if(bookName){
+        filtersCondition.push({ field: "BookName", operator: "contains", value: bookName });
     }
 
+    // 2. 圖書類別：完全相等 (eq) 
+    // 原本程式碼使用 contains，建議改為 eq
+    var bookClassId = $("#book_class_q").data("kendoDropDownList").value();
+    if(bookClassId){
+        filtersCondition.push({ field: "BookClassId", operator: "eq", value: bookClassId });
+    }
+
+    // 3. 借閱人：完全相等 (eq) 
+    var keeperId = $("#book_keeper_q").data("kendoDropDownList").value();
+    if(keeperId){
+        filtersCondition.push({ field: "BookKeeperId", operator: "eq", value: keeperId });
+    }
+
+    // 4. 借閱狀態：完全相等 (eq) 
+    var statusId = $("#book_status_q").data("kendoDropDownList").value();
+    if(statusId){
+        filtersCondition.push({ field: "BookStatusId", operator: "eq", value: statusId });
+    }
+
+    // 執行篩選
     grid.dataSource.filter({
         logic: "and",
-        filters:filtersCondition
+        filters: filtersCondition
     });
 }
+
 
 function deleteBook(e) {
     
@@ -442,17 +462,15 @@ function showBookLendRecord(e) {
  * @param {*} area 
  */
 function clear(area) {
-    //TODO : 請補齊未完成的功能
+    // 1. 清空所有查詢輸入項 
     $("#book_name_q").val("");
-    // 清除下拉選單
-    $("#book_class_q").data("kendoDropDownList").select(0);
-    $("#book_keeper_q").data("kendoDropDownList").select(0);
-    $("#book_status_q").data("kendoDropDownList").select(0);
-    
-    // 重新整理 Grid (顯示全部資料)
-    var grid = getBooGrid();
-    grid.dataSource.filter({});
+    $("#book_class_q").data("kendoDropDownList").value("");
+    $("#book_keeper_q").data("kendoDropDownList").value("");
+    $("#book_status_q").data("kendoDropDownList").value("");
 
+    // 2. Grid 內容須同步 (清空篩選條件以顯示所有資料) 
+    var grid = $("#book_grid").data("kendoGrid");
+    grid.dataSource.filter({}); 
 }
 
 /**
