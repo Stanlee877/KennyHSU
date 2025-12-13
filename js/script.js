@@ -305,6 +305,16 @@ function updateBook(bookId){
  /**新增借閱紀錄 */
  function addBookLendRecord() {  
     //TODO：請完成新增借閱紀錄相關功能
+    var record = {
+        "BookId": book.BookId,
+        "BookKeeperId": book.BookKeeperId,
+        "BookKeeperCname": book.BookKeeperCname,
+        "BookKeeperEname": book.BookKeeperEname,
+        "LendDate": kendo.toString(new Date(), "yyyy-MM-dd")
+    };
+    
+    bookLendDataFromLocalStorage.push(record);
+    localStorage.setItem("lendData", JSON.stringify(bookLendDataFromLocalStorage));
  }
 
  /**
@@ -395,15 +405,20 @@ function bindBook(bookId){
 }
 
 function showBookLendRecord(e) {
+    e.preventDefault();
 
     //TODO : 請補齊未完成的功能
     var grid = getBooGrid();
-    var dataItem=grid.dataItem(e.target.closest("tr"))
-    var bookLendRecordData=[];
+    var dataItem = grid.dataItem(e.target.closest("tr"));
+    
+    // 從 localStorage 資料過濾出該書的紀錄
+    var bookLendRecordData = bookLendDataFromLocalStorage.filter(function(item){
+        return item.BookId == dataItem.BookId;
+    });
     
     $("#book_record_grid").data("kendoGrid").dataSource.data(bookLendRecordData);
-    $("#book_record_area").data("kendoWindow").title(dataItem.BookName).open();
-
+    $("#book_record_area").data("kendoWindow").title("借閱紀錄 - " + dataItem.BookName); // 設定 Title
+    $("#book_record_area").data("kendoWindow").open();
 }
 
 /**
@@ -436,7 +451,7 @@ function setStatusKeepRelation() {
         case "add"://新增狀態
             $("#book_status_d_col").css("display","none");
             $("#book_keeper_d_col").css("display","none");
-            break; // 原程式碼已有，這裡僅為上下文
+            break; 
             
         case "update"://修改狀態
             $("#book_status_d_col").css("display","block"); // 確保顯示
