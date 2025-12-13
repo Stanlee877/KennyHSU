@@ -64,18 +64,27 @@ $(function () {
         queryBook();
     });
 
-    $("#btn-save").click(function (e) {
+$("#btn-save").click(function (e) {
         e.preventDefault();
         
-        //TODO : 存檔前請作必填的檢查
-        //低消：使用 if else ==>alert 提示訊息檢查
-        //優  : 使用 kendo validator 檢查
+        // TODO : 存檔前請作必填的檢查 (這是您截圖中的第1個 TODO)
+        // 使用 Kendo Validator 進行驗證 (符合程式碼註解中的"優"級作法)
+        var validator = $("#book_detail_area").kendoValidator().data("kendoValidator");
+        
+        if (!validator.validate()) {
+            // 驗證失敗，顯示錯誤訊息 (Kendo 會自動顯示紅色錯誤提示，這裡可加一個 alert 作為雙重提示)
+            alert("請檢查必填欄位是否皆已輸入！");
+            return;
+        }
+
         switch (state) {
             case "add":
                 addBook();
                 break;
             case "update":
-                updateBook('9999');
+                // 需取得當前編輯的 BookId，這裡我們從隱藏欄位取
+                var bookId = $("#book_id_d").val(); 
+                updateBook(bookId);
             break;
             default:
                 break;
@@ -174,10 +183,12 @@ function loadBookData() {
 
 function onChange() {
     //TODO : 請完成遺漏的邏輯
-    if(selectedValue===""){
-        $("#book_image_d").attr("src", "image/optional.jpg");
+    var selectedValue = $("#book_class_d").data("kendoDropDownList").value();
+    
+    if(selectedValue === ""){
+        $("#book_image").attr("src", "image/optional.jpg");
     }else{
-       
+       $("#book_image").attr("src", "image/" + selectedValue + ".jpg");
     }
 }
 
@@ -330,6 +341,16 @@ function bindBook(bookId){
     $("#book_author_d").val(book.BookAuthor);
     $("#book_publisher_d").val(book.BookPublisher);
     //TODO : 完成尚未完成的程式碼
+    $("#book_class_d").data("kendoDropDownList").value(book.BookClassId);
+    $("#book_status_d").data("kendoDropDownList").value(book.BookStatusId);
+    $("#book_keeper_d").data("kendoDropDownList").value(book.BookKeeperId);
+
+    // 7. 設定 DatePicker 與 TextArea 並觸發圖片更新
+    $("#book_bought_date_d").data("kendoDatePicker").value(book.BookBoughtDate);
+    $("#book_note_d").val(book.BookNote);
+    
+    // 手動觸發 onChange 以更新圖片
+    onChange();
 }
 
 function showBookLendRecord(e) {
