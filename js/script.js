@@ -326,13 +326,37 @@ function queryBook(){
 
 
 function deleteBook(e) {
+    e.preventDefault(); // 避免點擊連結的預設行為
     
     var grid = $("#book_grid").data("kendoGrid");    
-    var row = grid.dataItem(e.target.closest("tr"));
+    var dataItem = grid.dataItem(e.target.closest("tr"));
 
-    grid.dataSource.remove(row);    
-    alert("刪除成功");
+    // [Fix] 1. 驗證：已借出書籍不可刪除 [Source 9]
+    // 依照 code-data.js 定義：B=已借出, C=已借出(未領)
+    if (dataItem.BookStatusId == "B" || dataItem.BookStatusId == "C") {
+        alert("已借出書籍不可刪除！");
+        return; // 終止程式，不執行刪除
+    }
 
+    // 增加確認視窗 (雖然文件沒寫，但這是良好的 UI 習慣)
+    if (!confirm("確定要刪除 [" + dataItem.BookName + "] 嗎？")) {
+        return;
+    }
+
+    // [Fix] 2. 移除 LocalStorage 資料 [Source 9]
+    // 先找到該筆資料在陣列中的位置
+    var index = bookDataFromLocalStorage.findIndex(function(item){
+        return item.BookId == dataItem.BookId;
+    });
+
+    // 如果找得到，從陣列中移除並存檔
+    if (index > -1) {
+        bookDataFromLocalStorage.splice(index, 1);
+        localStorage.setItem("bookData", JSON.stringify(bookDataFromLocalStorage));
+    }
+
+    // [Fix] 3. 移除 Grid 該筆資料 [Source 9]
+    grid.dataSource.remove(dataItem);    
 }
 
 
